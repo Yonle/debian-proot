@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-# alpine-proot - A well quick standalone Alpine PRoot installer & launcher
-# https://github.com/Yonle/alpine-proot
+# debian-proot - A fork of Yonle/alpine-proot (github). A well quick standalone Debian PRoot installer & launcher
+# https://github.com/Yonle/debian-proot
 
-if [ "$ALPINEPROOT_FORCE" ]; then
+if [ "$DEBIANPROOT_FORCE" ]; then
   echo "Warning: I'm sure you know what are you doing."
 fi
 
 # Do not run if user run this script as root
-if [ $(id -u) = 0 ] && [ ! "$ALPINEPROOT_FORCE" ]; then
-  echo "Running alpine-proot as root is dangerous and can harm one of your system component. Because of that, I'm aborting now. You may set ALPINEPROOT_FORCE variable as 1 if you want to continue."
+if [ $(id -u) = 0 ] && [ ! "$DEBIANPROOT_FORCE" ]; then
+  echo "Running debian-proot as root is dangerous and can harm one of your system component. Because of that, I'm aborting now. You may set DEBIANPROOT_FORCE variable as 1 if you want to continue."
   exit 6
 fi
 
@@ -28,28 +28,37 @@ if [ ! $TMPDIR ]; then
 fi
 
 if [ ! $CONTAINER_PATH ]; then
-  export CONTAINER_PATH="$HOME/.container"
+  export CONTAINER_PATH="$HOME/.debian_container"
 fi
+
+# Here we detect architexture then use it's dist architexture
+case $(uname -m) in
+  armel|armhf|arm)  DIST_ARCH=arm32v5 ;;
+  armv7l)  DIST_ARCH=arm32v7 ;;
+  arm64|aarch64)  DIST_ARCH=arm64v8 ;;
+  x86_64)  DIST_ARCH=amd64 ;;
+  *)  DIST_ARCH=$(uname -m) ;;
+esac
 
 if [ ! $CONTAINER_DOWNLOAD_URL ]; then
-  export CONTAINER_DOWNLOAD_URL="https://dl-cdn.alpinelinux.org/alpine/v3.14/releases/$(uname -m)/alpine-minirootfs-3.14.1-$(uname -m).tar.gz"
+  export CONTAINER_DOWNLOAD_URL=https://raw.githubusercontent.com/debuerreotype/docker-debian-artifacts/dist-$DIST_ARCH/sid/rootfs.tar.xz
 fi
 
-alpineproot() {
+debianproot() {
   export PROOT=$(command -v proot) || $(command -v proot-rs)
 
-  if [ -n "$ALPINEPROOT_USE_PROOT_RS" ] && [ -x $(command -v proot-rs) ]; then
+  if [ -n "$DEBIANPROOT_USE_PROOT_RS" ] && [ -x $(command -v proot-rs) ]; then
     unset PROOT && export PROOT=$(command -v proot-rs)
   fi
 
-  if [ -n "$ALPINEPROOT_PROOT_PATH" ]; then
-    unset PROOT && export PROOT=$ALPINEPROOT_PROOT_PATH
+  if [ -n "$DEBIANPROOT_PROOT_PATH" ]; then
+    unset PROOT && export PROOT=$DEBIANPROOT_PROOT_PATH
   fi
 
   # Check whenever proot is installed or no
   if [ -z "$PROOT" ] || [ ! -x $PROOT ]; then
     if [ "$(uname -o)" = "Android" ] && pkg=$(command -v pkg); then
-      pkg install proot -y && alpineproot $@
+      pkg install proot -y && debianproot $@
       exit 0
     fi
     echo "PRoot / PRoot-rs is required in order to execute this script."
@@ -60,28 +69,29 @@ alpineproot() {
   # Install / Reinstall if container directory is unavailable or empty.
   if [ ! -d $CONTAINER_PATH ] || [ -z "$(ls -A $CONTAINER_PATH)" ] || [ ! -x $CONTAINER_PATH/bin/su ]; then
     # Download rootfs if there's no rootfs download cache.
-    if [ ! -f $HOME/.cached_rootfs.tar.gz ]; then
+    if [ ! -f $HOME/.cached_debian_rootfs.tar.xz ]; then
       if [ ! -x $(command -v curl) ]; then
         if [ "$(uname -o)" = "Android" ] && pkg=$(command -v pkg); then
-          pkg install curl -y && alpineproot $@
+          pkg install curl -y && debianproot $@
           exit 0
         fi
         echo "libcurl is required in order to download rootfs manually"
         echo "More information can go to https://curl.se/libcurl"
         exit 6
       fi
-      curl -L#o $HOME/.cached_rootfs.tar.gz $CONTAINER_DOWNLOAD_URL
+      echo "Info: Installation may take a second or a minute...." 
+      curl -L#o $HOME/.cached_debian_rootfs.tar.xz $CONTAINER_DOWNLOAD_URL
       if [ $? != 0 ]; then exit 1; fi
     fi
 
     # Wipe and extract rootfs
     rm -rf $CONTAINER_PATH
     mkdir -p $CONTAINER_PATH
-    tar -xzf $HOME/.cached_rootfs.tar.gz -C $CONTAINER_PATH
+    tar --hard-dereference -xf $HOME/.cached_debian_rootfs.tar.xz -C $CONTAINER_PATH
 
     # If extraction fail, Delete cached rootfs and try again
     if [ $? != 0 ]; then
-      rm -f $HOME/.cached_rootfs.tar.gz && alpineproot $@
+      rm -f $HOME/.cached_debian_rootfs.tar.xz && debianproot $@
       exit 0
     fi
 
@@ -286,7 +296,7 @@ EOM
 
   # Detect whenever Pulseaudio is installed with POSIX support
   if pulseaudio=$(command -v pulseaudio) && [ ! -S $PREFIX/var/run/pulse/native ]; then
-    if [ -z "$ALPINEPROOT_NO_PULSE" ]; then
+    if [ -z "$DEBIANPROOT_NO_PULSE" ]; then
       if ! $pulseaudio --check; then
         $pulseaudio --start --exit-idle-time=-1
       fi
@@ -296,19 +306,19 @@ EOM
       fi
     fi
   else
-    if [ -z "$ALPINEPROOT_NO_PULSE" ]; then
+    if [ -z "$DEBIANPROOT_NO_PULSE" ]; then
       if [ -S $PREFIX/var/run/pulse/native ]; then
         COMMANDS+=" -b $PREFIX/var/run/pulse/native:/var/run/pulse/native"
       fi
     fi
   fi
 
-  if [ -n "$ALPINEPROOT_PROOT_OPTIONS" ]; then
-    COMMANDS+=" $ALPINEPROOT_PROOT_OPTIONS"
+  if [ -n "$DEBIANPROOT_PROOT_OPTIONS" ]; then
+    COMMANDS+=" $DEBIANPROOT_PROOT_OPTIONS"
   fi
 
-  # Detect whenever ALPINEPROOT_BIND_TMPDIR is available or no.
-  if [ -n "$ALPINEPROOT_BIND_TMPDIR" ]; then
+  # Detect whenever DEBIANPROOT_BIND_TMPDIR is available or no.
+  if [ -n "$DEBIANPROOT_BIND_TMPDIR" ]; then
     COMMANDS+=" -b $TMPDIR:/tmp"
   fi
 
@@ -324,4 +334,4 @@ EOM
   $COMMANDS /bin/su -l $@
 }
 
-alpineproot $@
+debianproot $@
