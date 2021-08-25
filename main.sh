@@ -69,6 +69,7 @@ debianproot() {
   if [ -z $(command -v xz) ] || [ ! -x $(command -v xz) ]; then
     echo "xz is required in order to extract Debian rootfs."
     echo "More information can go to https://tukaani.org/xz/"
+    exit 6
   fi
 
   # Install / Reinstall if container directory is unavailable or empty.
