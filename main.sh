@@ -66,7 +66,7 @@ debianproot() {
     exit 6
   fi
 
-  if [ ! -x $(command -v xz) ]; then
+  if [ -z $(command -v xz) ] || [ ! -x $(command -v xz) ]; then
     echo "xz is required in order to extract Debian rootfs."
     echo "More information can go to https://tukaani.org/xz/"
   fi
