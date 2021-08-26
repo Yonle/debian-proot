@@ -93,7 +93,9 @@ debianproot() {
     # Wipe and extract rootfs
     rm -rf $CONTAINER_PATH
     mkdir -p $CONTAINER_PATH
-    tar --hard-dereference -xf $HOME/.cached_debian_rootfs.tar.xz -C $CONTAINER_PATH
+
+    # Use proot to prevent hard link extraction error
+    $PROOT --link2symlink tar -xf $HOME/.cached_debian_rootfs.tar.xz -C $CONTAINER_PATH
 
     # If extraction fail, Delete cached rootfs and try again
     if [ $? != 0 ]; then
