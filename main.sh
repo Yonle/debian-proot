@@ -90,10 +90,10 @@ debianproot() {
       if [ $? != 0 ]; then exit 1; fi
     fi
 
-    # Wipe and extract rootfs
-    rm -rf $CONTAINER_PATH
-    mkdir -p $CONTAINER_PATH
-
+    if [ ! -d $CONTAINER_PATH ]; then
+      mkdir -p $CONTAINER_PATH
+    fi
+    
     # Use proot to prevent hard link extraction error
     $PROOT --link2symlink tar -xf $HOME/.cached_debian_rootfs.tar.xz -C $CONTAINER_PATH
 
