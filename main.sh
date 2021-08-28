@@ -106,7 +106,7 @@ debianproot() {
     echo -e "nameserver 1.1.1.1\nnameserver 1.0.0.1" > $CONTAINER_PATH/etc/resolv.conf
   fi
 
-  rm -rf $CONTAINER_PATH/proc
+  proot -0 rm -rf $CONTAINER_PATH/proc
   mkdir $CONTAINER_PATH/proc
 
   # Proceed make fake /proc/version
