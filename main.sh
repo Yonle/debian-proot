@@ -73,7 +73,7 @@ debianproot() {
   fi
 
   # Install / Reinstall if container directory is unavailable or empty.
-  if [ ! -d $CONTAINER_PATH ] || [ -z "$(ls -A $CONTAINER_PATH)" ] || [ ! -x $CONTAINER_PATH/bin/su ]; then
+  if [ ! -d $CONTAINER_PATH ] || [ -z "$(ls -A $CONTAINER_PATH)" ] || [ ! -x $CONTAINER_PATH/bin/login ]; then
     # Download rootfs if there's no rootfs download cache.
     if [ ! -f $HOME/.cached_debian_rootfs.tar.xz ]; then
       if [ ! -x $(command -v curl) ]; then
