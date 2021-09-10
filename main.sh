@@ -327,7 +327,7 @@ EOM
   fi
 
   $COMMANDS /bin/ln -fs /bin/true /usr/bin/dpkg-statoverride  
-  $COMMANDS /bin/su -l $@
+  eval "exec $COMMANDS /bin/su -l \"$@\""
 }
 
 debianproot $@
