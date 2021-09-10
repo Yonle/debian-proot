@@ -326,8 +326,12 @@ EOM
     COMMANDS="$COMMANDS -b $TMPDIR:/tmp"
   fi
 
-  $COMMANDS /bin/ln -fs /bin/true /usr/bin/dpkg-statoverride  
-  eval "exec $COMMANDS /bin/su -l \"$@\""
+  $COMMANDS /bin/ln -fs /bin/true /usr/bin/dpkg-statoverride
+  if [ "$#" = 0 ]; then
+    eval "exec $COMMANDS /bin/su -l"
+  else
+    eval "exec $COMMANDS /bin/su -l \"$@\""
+  fi
 }
 
 debianproot $@
