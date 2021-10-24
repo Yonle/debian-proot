@@ -1,5 +1,5 @@
 ## Deprecated
-This script is no longer receive updated due to lost of interest. Please use [Yonle/alpine-proot](https://github.com/Yonle/alpine-proot) instead.
+This script is no longer receive update due to lost of interest. Please use [Yonle/alpine-proot](https://github.com/Yonle/alpine-proot) instead.
 
 [![Debian Linux](https://www.debian.org/Pics/homeworld-fg.png)](https://debian.org)
 # debian-proot 
